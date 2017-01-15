@@ -5,17 +5,16 @@
  *
  * @author Tim Robert-Fitzgerald June 2016
  */
-require '../includes/class.Gauge.php';
 require '../includes/db.php';
+require '../includes/class.Gauge.php';
+$meter = new Meter($db);
 if ($_GET['ver'] === 'html') {
   // Charset here is important for displaying unicode symbols correctly!
   header('Content-Type: text/html; charset=UTF-8'); // Output is HTML
-}
-else {
+} else {
   header('Content-Type: image/svg+xml; charset=UTF-8'); // Output is SVG
 }
 $log = array(); // For debugging purposes; when used in production this code should be removed
-// BuildingOS ID for meter data
 $meter_id = $_GET['meter_id'];
 $color = (!empty($_GET['color'])) ? $_GET['color'] : '#333'; // Color of text
 $bg = (!empty($_GET['bg'])) ? $_GET['bg'] : '#fff'; // Background color of gauge
@@ -27,45 +26,35 @@ $title2 = (!empty($_GET['title2'])) ? $_GET['title2'] : null;
 $data_interval = (!empty($_GET['data_interval'])) ? $_GET['data_interval'] : '[1, 2, 3, 4, 5, 6, 7]'; // By default include all days in one group
 $border_radius = (!empty($_GET['border_radius'])) ? $_GET['border_radius'] : 3;
 $rounding = (!empty($_GET['rounding'])) ? $_GET['rounding'] : null;
-$from = (!empty($_GET['start'])) ? strtotime($_GET['start']) : strtotime('-1 week');
-$to = time();
-
-$gauge = new Gauge($db);
-$stmt = $db->prepare('SELECT id, current, units FROM meters WHERE id = ? LIMIT 1');
-$stmt->execute(array($meter_id));
-$result = $stmt->fetch();
-$default_units = $result['units'];
-$current = $result['current'];
-$id = $result['id'];
-$data = $gauge->getData($id, $from, $to);
-if (empty($data)) { // This gauge must not be on the cron job so fallback to an API call
-  $log[] = 'Data retrieved from API';
-  require '../includes/class.BuildingOS.php';
-  $bos = new BuildingOS($db);
-  $meter_url = $db->query('SELECT url FROM meters WHERE id = ' . intval($id))->fetchColumn();
-  $data = json_decode($bos->getMeter($meter_url . '/data', 'quarterhour', $from, $to), true);
-  $default_units = $data['meta']['units']['value']['displayName'];
-  $tmp = array();
-  for ($i = 0; $i < count($data['data']); $i++) { 
-    $tmp[$i]['value'] = $data['data'][$i]['value'];
-    $tmp[$i]['recorded'] = strtotime($data['data'][$i]['localtime']);
+$units = (!empty($_GET['units'])) ? $_GET['units'] : $meter->getUnits($meter_id);
+if (empty($_GET['start'])) {
+  if (!empty($_GET['npoints'])) {
+    $npoints = intval($_GET['npoints']);
   }
-  $data = $tmp;
-  $current = json_decode($bos->getMeter($meter_url . '/data', 'live', $to - 300, $to), true);
-  $current = end($current['data'])['value'];
+  else {
+    $npoints = 5;
+  }
+} else {
+  $from = strtotime($_GET['start']);
+  $to = time();
+  $npoints = null;
 }
-else { $log[] = 'Data retrieved from cache'; }
 
-$data = $gauge->filterArray($data, $data_interval);
-
-$units = (!empty($_GET['units'])) ? $_GET['units'] : $default_units;
 if ($_GET['ver'] === 'html') { // Placement of relative level indicator is different in HTML/SVG versions
-  $relative_value = $gauge->relativeValue($data, $current, 14, 80);
+  if ($npoints === null) {
+    $relative_value = relativeValueOfMeterWithPoints($meter_id, $data_interval, $npoints, 'quarterhour', 14, 80);
+  } else {
+    $relative_value = relativeValueOfMeterFromTo($meter_id, $data_interval, $from, $to, null, 14, 80);
+  }
 }
 else {
-  $relative_value = $gauge->relativeValue($data, $current, 15, 85);
+  if ($npoints === null) {
+    $relative_value = relativeValueOfMeterWithPoints($meter_id, $data_interval, $npoints, 'quarterhour', 15, 85);
+  } else {
+    $relative_value = relativeValueOfMeterFromTo($meter_id, $data_interval, $from, $to, null, 15, 85);
+  }
 }
-// array_push($log, 'Relative value: ' . $relative_value);
+
 if ($rounding === null) {
   if ($current < 3) {
     $rounding = 2;
@@ -329,7 +318,7 @@ h1, h2, h3 {
   <h1 class="current odometer" id="odometer">0</h1>
   <h3 class="units animated bounceIn"><?php echo $units; ?></h3>
   <h5 id="last-updated" class="last-updated">Updated <?php
-  $diff = time() - $gauge->lastUpdated($meter_id);
+  $diff = time() - $meter->lastUpdated($meter_id);
   if ($diff <= 60) {
     echo "{$diff} seconds";
   }
