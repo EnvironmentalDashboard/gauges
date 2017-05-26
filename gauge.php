@@ -31,8 +31,10 @@ $rounding = (!empty($_GET['rounding'])) ? $_GET['rounding'] : null;
 $units = (!empty($_GET['units'])) ? $_GET['units'] : $meter->getUnits($meter_id);
 $stmt = $db->prepare('SELECT relative_value FROM relative_values WHERE id = ? LIMIT 1');
 $stmt->execute(array($rv_id));
-$relative_value = $stmt->fetchColumn();
-$relative_value = ($_GET['ver'] === 'html') ? ($relative_value/100)*(14-80)+14 : ($relative_value/100)*(15-85)+15; // Placement of relative level indicator is different in HTML/SVG versions
+$relative_value = intval($stmt->fetchColumn());
+$log[] = $relative_value;
+$relative_value = ($_GET['ver'] === 'html') ? $meter->scale($relative_value, 14, 80) : $meter->scale($relative_value, 15, 85); // Placement of relative level indicator is different in HTML/SVG versions
+$log[] = $relative_value;
 $stmt = $db->prepare('SELECT current FROM meters WHERE id = ?');
 $stmt->execute(array($meter_id));
 $current = $stmt->fetchColumn();
@@ -299,7 +301,7 @@ h1, h2, h3 {
   <h1 class="current odometer" id="odometer">0</h1>
   <h3 class="units animated bounceIn"><?php echo $units; ?></h3>
   <h5 id="last-updated" class="last-updated">Updated <?php
-  $diff = time() - $meter->lastUpdated($meter_id);
+  $diff = time() - $meter->lastUpdated($meter_id, 'live');
   if ($diff <= 60) {
     echo "{$diff} seconds";
   }
@@ -363,6 +365,50 @@ setTimeout(function(){ document.getElementById("last-updated").className = "last
       rx="<?php echo $border_radius; ?>" ry="<?php echo $border_radius; ?>"
       style="fill:<?php echo $bg; ?>" />
 
+<?php
+$c = str_split(number_format($current, $rounding));
+$startx = ($width/2) - (count($c)-1)*14;
+for ($i = 0; $i < count($c); $i++) {
+  if ($c[$i] === '.' || $c[$i] === '-' || $c[$i] === ',') {
+    $tmp = ($c[$i] === ',') ? $startx - 18 : $startx - 12;
+    echo "<text x='{$tmp}' y='".$height/1.75."' style='font-weight: 100;font-family: {$font_family};font-size:".(($height + $width) / 10).";fill: {$color};'>{$c[$i]}</text>\n";
+    $startx += 20;
+  } else {
+    echo "<text x='{$startx}' y='".$height*1.2."'\n
+          text-anchor='middle'\n
+          class='slot-machine digit'\n
+          data-digit='{$c[$i]}'\n
+          alignment-baseline='central'\n
+          style='font-weight: 100;font-family: {$font_family};font-size:".(($height + $width) / 10).";fill: {$color};'>\n
+          <tspan>0</tspan>\n";
+    $counter = 1;
+    for ($iterations = 0; $iterations < 100; $iterations++) { 
+      echo "<tspan dy=\"45px\" dx=\"-44.5px\">{$counter}</tspan>\n";
+      if ($counter === 9) {
+        $counter = 0;
+      } else {
+        $counter++;
+      }
+    }
+    echo "</text>\n";
+    $startx += 30;
+  }
+}
+?>
+<rect width="<?php echo $width; ?>px"
+      height="<?php echo $height*.35; ?>px"
+      x="0"
+      y="0"
+      rx="<?php echo $border_radius; ?>" ry="<?php echo $border_radius; ?>"
+      style="fill:<?php echo $bg; ?>;" />
+
+<rect width="<?php echo $width; ?>px"
+      height="<?php echo $height*.4; ?>px"
+      x="0"
+      y="<?php echo $height*.6; ?>"
+      rx="<?php echo $border_radius; ?>" ry="<?php echo $border_radius; ?>"
+      style="fill:<?php echo $bg; ?>;" />
+
 <text x="<?php echo $width / 2; ?>"
       y="<?php echo $height / 10; ?>"
       text-anchor="middle"
@@ -381,14 +427,6 @@ setTimeout(function(){ document.getElementById("last-updated").className = "last
 </text>
 <?php } ?>
 
-<text x="<?php echo $width / 2; ?>"
-      y="<?php echo $height / 2.25; ?>"
-      class="anim"
-      text-anchor="middle"
-      alignment-baseline="central"
-      style="font-weight: 100;font-family: <?php echo $font_family; ?>;font-size: <?php echo ($height + $width) / 10; ?>;fill: <?php echo $color ?>;">
-        <?php echo round($current, $rounding); ?>
-</text>
 
 <text x="<?php echo ($width/2) ?>"
       y="<?php echo $height / 1.5; ?>"
@@ -412,10 +450,72 @@ setTimeout(function(){ document.getElementById("last-updated").className = "last
 <text x="97%" y="92%" text-anchor="end"
       style="font-weight: 100;font-family: <?php echo $font_family; ?>;font-size: <?php echo ($width / 30); ?>;fill: <?php echo $color; ?>">HIGH</text>
 
+<?php if (!isset($_GET['nojs'])) {
+  echo '<script type="text/javascript" xlink:href="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"/>';
+  echo '<script type="text/javascript" xlink:href="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.18.5/TweenMax.min.js"/>';
+} ?>
 <script type="text/javascript">
 // <![CDATA[
-  //console.log(<?php //echo json_encode($log) ?>);
-  setTimeout(function(){ window.location.reload(true); }, 60000);
+  // setTimeout(function(){ window.location.reload(true); }, 60000);
+  /* Delete all this
+  // https://stackoverflow.com/a/18120786/2624391
+  Element.prototype.remove = function() {
+    this.parentElement.removeChild(this);
+  }
+  NodeList.prototype.remove = HTMLCollection.prototype.remove = function() {
+    for(var i = this.length - 1; i >= 0; i--) {
+        if(this[i] && this[i].parentElement) {
+            this[i].parentElement.removeChild(this[i]);
+        }
+    }
+  }
+  function spin_helper(e, digit, counter = 0) {
+    e.setAttribute('y', e.getAttribute('y') + 5);
+    if (counter < 10) {
+      counter++;
+      spin_helper(e, digit, counter);
+    }
+  }
+  Element.prototype.spin = function(digit) {
+    spin_helper(this, digit);
+  };
+  var e = document.getElementsByClassName("slot-machine");
+  for (var i = e.length - 1; i >= 0; i--) {
+    var digit = e[i].getAttribute("data-digit");
+    if (digit === '.') {
+      e[i].childNodes.remove();
+      e[i].innerHTML = '.';
+    } else {
+      e[i].spin(digit);
+    }
+  }
+  */
+ var total = $('.slot-machine').length;
+ $('.slot-machine').each(function(i) {
+    var digit = $(this).data('digit');
+    if (digit === 1) {
+      var special = "-4215px";
+    } else if (digit === 2) {
+      var special = "-4260px";
+    } else if (digit === 3) {
+      var special = "-4305px";
+    } else if (digit === 4) {
+      var special = "-4350px";
+    } else if (digit === 5) {
+      var special = "-4395px";
+    } else if (digit === 6) {
+      var special = "-4440px";
+    } else if (digit === 7) {
+      var special = "-4485px";
+    } else if (digit === 8) {
+      var special = "-4530px";
+    } else if (digit === 9) {
+      var special = "-4575px";
+    } else {
+      var special = "-4620px";
+    }
+    TweenMax.to($(this), (i/total) + 2, {y:special, ease:Power4.easeOut});
+  });
 // ]]>
 </script>
 </svg>
