@@ -23,6 +23,7 @@ $color = (!empty($_GET['color'])) ? $_GET['color'] : '#333'; // Color of text
 $bg = (!empty($_GET['bg'])) ? $_GET['bg'] : '#fff'; // Background color of gauge
 $height = (!empty($_GET['height'])) ? $_GET['height'] : 190;
 $width = (!empty($_GET['width'])) ? $_GET['width'] : 290;
+$font_size = ($height + $width) / 10;
 $font_family = (!empty($_GET['font_family'])) ? $_GET['font_family'] : 'Futura, Helvetica, sans-serif';
 $title = (!empty($_GET['title'])) ? $_GET['title'] : 'Untitled Gauge';
 $title2 = (!empty($_GET['title2'])) ? $_GET['title2'] : null;
@@ -178,7 +179,7 @@ h1, h2, h3 {
   top: 5%;
 }
 .current {
-  font-size: <?php echo ($height + $width) / 10; ?>px;
+  font-size: <?php echo $font_size; ?>px;
   /*margin-top: 15%;*/
   margin-top: 5%;
   font-weight: 400;
@@ -347,16 +348,56 @@ setTimeout(function(){ document.getElementById("last-updated").className = "last
 
 <style>
 /* <![CDATA[ */
-@keyframes anim {
-  0%, 25%, 50%, 75%, 100% {
-    opacity: 1;
-  }
-
-  12.5%, 37.5%, 62.5%, 87.5% {
-    opacity: 0;
-  }
+@keyframes zero {
+  from { transform: translateY(0);}
+  to { transform: translateY(-4500px); }
 }
-.anim { animation: anim 1s 1; }
+.zero { animation: zero 2000ms ease-out 1; }
+@keyframes one {
+  from { transform: translateY(0);}
+  to { transform: translateY(-4550px); }
+}
+.one { animation: one 2100ms ease-out 1; }
+@keyframes two {
+  from { transform: translateY(0);}
+  to { transform: translateY(-4600px); }
+}
+.two { animation: two 2200ms ease-out 1; }
+@keyframes three {
+  from { transform: translateY(0);}
+  to { transform: translateY(-4650px); }
+}
+.three { animation: three 2300ms ease-out 1; }
+@keyframes four {
+  from { transform: translateY(0);}
+  to { transform: translateY(-4700px); }
+}
+.four { animation: four 2400ms ease-out 1; }
+@keyframes five {
+  from { transform: translateY(0);}
+  to { transform: translateY(-4750px); }
+}
+.five { animation: five 2500ms ease-out 1; }
+@keyframes six {
+  from { transform: translateY(0);}
+  to { transform: translateY(-4800px); }
+}
+.six { animation: six 2600ms ease-out 1; }
+@keyframes seven {
+  from { transform: translateY(0);}
+  to { transform: translateY(-4850px); }
+}
+.seven { animation: seven 2700ms ease-out 1; }
+@keyframes eight {
+  from { transform: translateY(0);}
+  to { transform: translateY(-4900px); }
+}
+.eight { animation: eight 2800ms ease-out 1; }
+@keyframes nine {
+  from { transform: translateY(0);}
+  to { transform: translateY(-4950px); }
+}
+.nine { animation: nine 2900ms ease-out 1; }
 /* ]]> */
 </style>
 
@@ -364,33 +405,30 @@ setTimeout(function(){ document.getElementById("last-updated").className = "last
       height="100%"
       rx="<?php echo $border_radius; ?>" ry="<?php echo $border_radius; ?>"
       style="fill:<?php echo $bg; ?>" />
-
 <?php
 $c = str_split(number_format($current, $rounding));
 $startx = ($width/2) - (count($c)-1)*14;
+$numbers = array('zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine');
 for ($i = 0; $i < count($c); $i++) {
   if ($c[$i] === '.' || $c[$i] === '-' || $c[$i] === ',') {
-    $tmp = ($c[$i] === ',') ? $startx - 18 : $startx - 12;
-    echo "<text x='{$tmp}' y='".$height/1.75."' style='font-weight: 100;font-family: {$font_family};font-size:".(($height + $width) / 10).";fill: {$color};'>{$c[$i]}</text>\n";
+    $tmp = ($c[$i] === ',') ? $startx - 18 : $startx - 12; // different spacing
+    echo "<text x='{$tmp}' y='".$height/1.8."' style='font-weight: 100;font-family: {$font_family};font-size:{$font_size};fill: {$color};'>{$c[$i]}</text>\n";
     $startx += 20;
   } else {
-    echo "<text x='{$startx}' y='".$height*1.2."'\n
-          text-anchor='middle'\n
-          class='slot-machine digit'\n
-          data-digit='{$c[$i]}'\n
-          alignment-baseline='central'\n
-          style='font-weight: 100;font-family: {$font_family};font-size:".(($height + $width) / 10).";fill: {$color};'>\n
-          <tspan>0</tspan>\n";
-    $counter = 1;
+    echo "<g class='{$numbers[$c[$i]]}' transform=\"translate(0,0)\"\n
+          style=''>\n";
+    $counter = 0;
+    $tmp = $height/2.2;
     for ($iterations = 0; $iterations < 100; $iterations++) { 
-      echo "<tspan dy=\"45px\" dx=\"-44.5px\">{$counter}</tspan>\n";
+      echo "<text x='{$startx}' y='{$tmp}' class='slot-machine digit' data-digit='{$c[$i]}' alignment-baseline='central' text-anchor='middle' style='font-weight: 100;font-family: {$font_family};font-size:{$font_size};fill: {$color};'>{$counter}</text>\n";
+      $tmp += 50;
       if ($counter === 9) {
         $counter = 0;
       } else {
         $counter++;
       }
     }
-    echo "</text>\n";
+    echo "</g>\n";
     $startx += 30;
   }
 }
@@ -449,74 +487,5 @@ for ($i = 0; $i < count($c); $i++) {
       style="font-weight: 100;font-family: <?php echo $font_family; ?>;font-size: <?php echo ($width / 30); ?>;fill: <?php echo $color; ?>">LOW</text>
 <text x="97%" y="92%" text-anchor="end"
       style="font-weight: 100;font-family: <?php echo $font_family; ?>;font-size: <?php echo ($width / 30); ?>;fill: <?php echo $color; ?>">HIGH</text>
-
-<?php if (!isset($_GET['nojs'])) {
-  echo '<script type="text/javascript" xlink:href="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"/>';
-  echo '<script type="text/javascript" xlink:href="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.18.5/TweenMax.min.js"/>';
-} ?>
-<script type="text/javascript">
-// <![CDATA[
-  // setTimeout(function(){ window.location.reload(true); }, 60000);
-  /* Delete all this
-  // https://stackoverflow.com/a/18120786/2624391
-  Element.prototype.remove = function() {
-    this.parentElement.removeChild(this);
-  }
-  NodeList.prototype.remove = HTMLCollection.prototype.remove = function() {
-    for(var i = this.length - 1; i >= 0; i--) {
-        if(this[i] && this[i].parentElement) {
-            this[i].parentElement.removeChild(this[i]);
-        }
-    }
-  }
-  function spin_helper(e, digit, counter = 0) {
-    e.setAttribute('y', e.getAttribute('y') + 5);
-    if (counter < 10) {
-      counter++;
-      spin_helper(e, digit, counter);
-    }
-  }
-  Element.prototype.spin = function(digit) {
-    spin_helper(this, digit);
-  };
-  var e = document.getElementsByClassName("slot-machine");
-  for (var i = e.length - 1; i >= 0; i--) {
-    var digit = e[i].getAttribute("data-digit");
-    if (digit === '.') {
-      e[i].childNodes.remove();
-      e[i].innerHTML = '.';
-    } else {
-      e[i].spin(digit);
-    }
-  }
-  */
- var total = $('.slot-machine').length;
- $('.slot-machine').each(function(i) {
-    var digit = $(this).data('digit');
-    if (digit === 1) {
-      var special = "-4215px";
-    } else if (digit === 2) {
-      var special = "-4260px";
-    } else if (digit === 3) {
-      var special = "-4305px";
-    } else if (digit === 4) {
-      var special = "-4350px";
-    } else if (digit === 5) {
-      var special = "-4395px";
-    } else if (digit === 6) {
-      var special = "-4440px";
-    } else if (digit === 7) {
-      var special = "-4485px";
-    } else if (digit === 8) {
-      var special = "-4530px";
-    } else if (digit === 9) {
-      var special = "-4575px";
-    } else {
-      var special = "-4620px";
-    }
-    TweenMax.to($(this), (i/total) + 2, {y:special, ease:Power4.easeOut});
-  });
-// ]]>
-</script>
 </svg>
 <?php } ?>
