@@ -352,52 +352,52 @@ setTimeout(function(){ document.getElementById("last-updated").className = "last
   from { transform: translateY(0);}
   to { transform: translateY(-4500px); }
 }
-.zero { animation: zero 2000ms ease-out 1; }
+.zero { animation: zero 2000ms cubic-bezier(0.22, 0.61, 0.36, 1) 1; animation-fill-mode: forwards; }
 @keyframes one {
   from { transform: translateY(0);}
   to { transform: translateY(-4550px); }
 }
-.one { animation: one 2100ms ease-out 1; }
+.one { animation: one 2100ms cubic-bezier(0.22, 0.61, 0.36, 1) 1; animation-fill-mode: forwards; }
 @keyframes two {
   from { transform: translateY(0);}
   to { transform: translateY(-4600px); }
 }
-.two { animation: two 2200ms ease-out 1; }
+.two { animation: two 2200ms cubic-bezier(0.22, 0.61, 0.36, 1) 1; animation-fill-mode: forwards; }
 @keyframes three {
   from { transform: translateY(0);}
   to { transform: translateY(-4650px); }
 }
-.three { animation: three 2300ms ease-out 1; }
+.three { animation: three 2300ms cubic-bezier(0.22, 0.61, 0.36, 1) 1; animation-fill-mode: forwards; }
 @keyframes four {
   from { transform: translateY(0);}
   to { transform: translateY(-4700px); }
 }
-.four { animation: four 2400ms ease-out 1; }
+.four { animation: four 2400ms cubic-bezier(0.22, 0.61, 0.36, 1) 1; animation-fill-mode: forwards; }
 @keyframes five {
   from { transform: translateY(0);}
   to { transform: translateY(-4750px); }
 }
-.five { animation: five 2500ms ease-out 1; }
+.five { animation: five 2500ms cubic-bezier(0.22, 0.61, 0.36, 1) 1; animation-fill-mode: forwards; }
 @keyframes six {
   from { transform: translateY(0);}
   to { transform: translateY(-4800px); }
 }
-.six { animation: six 2600ms ease-out 1; }
+.six { animation: six 2600ms cubic-bezier(0.22, 0.61, 0.36, 1) 1; animation-fill-mode: forwards; }
 @keyframes seven {
   from { transform: translateY(0);}
   to { transform: translateY(-4850px); }
 }
-.seven { animation: seven 2700ms ease-out 1; }
+.seven { animation: seven 2700ms cubic-bezier(0.22, 0.61, 0.36, 1) 1; animation-fill-mode: forwards; }
 @keyframes eight {
   from { transform: translateY(0);}
   to { transform: translateY(-4900px); }
 }
-.eight { animation: eight 2800ms ease-out 1; }
+.eight { animation: eight 2800ms cubic-bezier(0.22, 0.61, 0.36, 1) 1; animation-fill-mode: forwards; }
 @keyframes nine {
   from { transform: translateY(0);}
   to { transform: translateY(-4950px); }
 }
-.nine { animation: nine 2900ms ease-out 1; }
+.nine { animation: nine 2900ms cubic-bezier(0.22, 0.61, 0.36, 1) 1; animation-fill-mode: forwards; }
 /* ]]> */
 </style>
 
@@ -415,12 +415,12 @@ for ($i = 0; $i < count($c); $i++) {
     echo "<text x='{$tmp}' y='".$height/1.8."' style='font-weight: 100;font-family: {$font_family};font-size:{$font_size};fill: {$color};'>{$c[$i]}</text>\n";
     $startx += 20;
   } else {
-    echo "<g class='{$numbers[$c[$i]]}' transform=\"translate(0,0)\"\n
+    echo "<g class='{$numbers[$c[$i]]}'\n
           style=''>\n";
     $counter = 0;
     $tmp = $height/2.2;
     for ($iterations = 0; $iterations < 100; $iterations++) { 
-      echo "<text x='{$startx}' y='{$tmp}' class='slot-machine digit' data-digit='{$c[$i]}' alignment-baseline='central' text-anchor='middle' style='font-weight: 100;font-family: {$font_family};font-size:{$font_size};fill: {$color};'>{$counter}</text>\n";
+      echo "<text x='{$startx}' y='{$tmp}' alignment-baseline='central' text-anchor='middle' style='font-weight: 100;font-family: {$font_family};font-size:{$font_size};fill: {$color};'>{$counter}</text>\n";
       $tmp += 50;
       if ($counter === 9) {
         $counter = 0;
